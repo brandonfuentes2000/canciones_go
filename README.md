@@ -1,19 +1,19 @@
-# proyecto 1
+# Proyecto 1
 
 Realiza busqueda de canciones por medio de itunes. Este proyecto utiliza *GOLANG*, *MongoDB* y esta diseñado para ejecutarse en un entorno con *Docker* y *NGINX* 
 
-## **Tabla de Contenidos**
-
-1. [Introducción](#introducción)
-2. [Características](#características)
-3. [Requisitos Previos](#requisitos-previos)
-4. [Instalación](#instalación)
-    - [1. Clonar el repositorio](#1-clonar-el-repositorio)
-    - [2. Configurar las variables de entorno](#2-configurar-las-variables-de-entorno)
-    - [3. Ejecutar con Docker Compose](#3-ejecutar-con-docker-compose)
-5. [Uso](#uso)
-6. [Arquitectura del Proyecto](#arquitectura-del-proyecto)
-7. [Consideraciones y Recomendaciones](#consideraciones-y-recomendaciones)
+- [Proyecto 1](#proyecto-1)
+  - [**Introducción**](#introducción)
+  - [**Características**](#características)
+  - [**Requisitos Previos**](#requisitos-previos)
+  - [**Instalación**](#instalación)
+    - [**1. Clonar el repositorio**](#1-clonar-el-repositorio)
+    - [**2. Configurar variables de entorno**](#2-configurar-variables-de-entorno)
+    - [**3. Instalar usando el script de instalación**](#3-instalar-usando-el-script-de-instalación)
+    - [**4. Ejecutar manualmente con Docker Compose**](#4-ejecutar-manualmente-con-docker-compose)
+      - [Construir y ejecutar contenedores](#construir-y-ejecutar-contenedores)
+  - [**Arquitectura del Proyecto**](#arquitectura-del-proyecto)
+  - [**Consideraciones y Recomendaciones**](#consideraciones-y-recomendaciones)
 ---
 
 ## **Introducción**
@@ -44,9 +44,9 @@ Este servicio está diseñado para:
 Asegúrate de que tu sistema cumpla con los siguientes requisitos antes de comenzar:
 
 1. **Herramientas necesarias**:
-   - Docker y Docker Compose instalados.
+   - Linux limpio (Ubuntu, Debian, etc.)
+   - Docker y Docker Compose instalados (si no los tienes, el script de intalación lo hará).
    - Git instalado.
-   - Editor de texto compatible con Markdown (por ejemplo, VS Code).
 
 2. **Conexión a Internet**:
    - Para descargar imágenes de contenedores y dependencias.
@@ -60,18 +60,36 @@ Asegúrate de que tu sistema cumpla con los siguientes requisitos antes de comen
 git clone https://github.com/brandonfuentes2000/canciones_go.git
 ```
 
-## **2. Configurar variables de entorno**
+### **2. Configurar variables de entorno**
 
-# Variables de entorno
 DB_HOST=mongo
 DB_PORT=21017
 DB_NAME=songs_db
 APP_PORT=3000
 JWT_SECRET=mysecretkey
 
-## **3. Ejecutar con Docker
+### **3. Instalar usando el script de instalación**
 
-# Construir y ejecutar contenedores
+Si has recibido un archivo ZIP (canciones_go.zip), sigue estos pasos:
+
+Descomprimir el archivo ZIP:
+
+unzip canciones_go.zip -d canciones_go
+cd canciones_go
+
+Dar permisos de ejecución al script de instalación:
+
+chmod +x install.sh
+
+Ejecutar el script para instalar y desplegar la API:
+
+./install.sh
+
+Este script: instalará Docker, extraerá la imagen de la API, configurará MongoDB y Nginx, y levantará los contenedores.
+
+### **4. Ejecutar manualmente con Docker Compose**
+
+#### Construir y ejecutar contenedores
 - 1. Puedes utilizar este comando para levantar el contenedor y visualizar los logs
 docker-compose up --build 
 
@@ -82,33 +100,13 @@ Esto iniciará tres servicios:
 
 app: Servicio API disponible en http://localhost:3000.
 mongo: Base de datos accesible en el puerto 27017.
-nginx: Servidor web para exponer el API.
+nginx: Servidor web para exponer el API en htpp://localhost.
 
 - Despues de eso puedes usar el siguiente comando para ver los contenedores que se estan ejecutando
 docker ps
 
-## **Uso**
-Utilice Insomnia o Postman
-Realize una solicitud Post al siguiente endpoint y con la siguiente estructura:
-http://localhost:3000/login
-
-{
-	"username" : "brandon", 
-	"password" : "contra2024"
-}
-
-Se va a generar un token el cual tiene un tiempo de duracion de 2 horas
-
-Con ese token debe abrir otro request en insomnia o postman dirigirse a Headers agregar uno nuevo.
-En header colocar 
- ## **Authorization**
-En el value colocar el token que les genero con esto incluido
-## **Bearer {Aqui va el token}**
-Ahora realiza una solicitud GET al siguiente endpoint 
-http://localhost:3000/api/search?name=bad+bunny&artist=drake
-
 ## **Arquitectura del Proyecto**
-canciones/
+```canciones/
 ├── cmd/                    # Punto de entrada principal
 │   └── main.go             # Archivo principal para iniciar la aplicación
 ├── internal/               # Lógica interna del proyecto
@@ -124,17 +122,19 @@ canciones/
 │   └── storage/            # Capa de acceso y persistencia de datos
 │       ├── db.go           # Conexión y configuración de MongoDB
 │       └── external.go     # Interacciones con APIs externas
+├── nginx/                  # Configuración servidor nginx
+   └── conf.d/default.conf  # Configuración del servidor y proxy. Aquí es donde definimos cómo Nginx redirige las peticiones a go
 ├── .env                    # Archivo de configuración de variables de entorno
 ├── .gitignore              # Configuración de exclusiones de Git
 ├── docker-compose.yml      # Configuración para orquestación de contenedores
 ├── Dockerfile              # Definición de imagen para el contenedor de la app
 ├── go.mod                  # Dependencias del proyecto en Go
 ├── go.sum                  # Registro de versiones de las dependencias
-├── nginx.conf              # Configuración de NGINX 
-└── README.md               # Documentación del proyecto
-
+├── nginx.conf              # Este archivo contiene solo configuraciones generales de Nginx
+└── README.md               # Documentación de instalación, configuración y ejecución del proyecto.
+└── API_DOCUMENTACION.md    # Documentación de uso para consumir la API (endpoints, autenticación)```
 
 ## **Consideraciones y Recomendaciones**
-Configura correctamente las variables de entorno.
-Asegúrate de exponer los puertos necesarios para los servicios.
+Configura correctamente las variables de entorno (.env).
+Asegúrate de exponer los puertos necesarios para los servicios (80, 3000, 27017).
 Utiliza un cliente HTTP como Insomnia para validar la API.

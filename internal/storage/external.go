@@ -4,9 +4,11 @@ import (
 	"canciones/internal/models"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -76,6 +78,66 @@ func SearchInITunes(name, artist, album string) ([]map[string]string, error) {
 			"artwork":  r.ArtworkUrl100,
 			"price":    fmt.Sprintf("%s %.2f", r.Currency, r.TrackPrice),
 			"origin":   "apple",
+		})
+	}
+
+	return songs, nil
+}
+
+func SearchInChartLyrics(name, artist string) ([]map[string]string, error) {
+	if name == "" && artist == "" {
+		return nil, fmt.Errorf("al menos uno de los parámetros (name, artist) debe ser proporcionado para ChartLyrics")
+	}
+
+	baseURL := "http://api.chartlyrics.com/apiv1.asmx/SearchLyric"
+	params := url.Values{}
+
+	if artist != "" {
+		params.Add("artist", artist)
+	}
+	if name != "" {
+		params.Add("song", name)
+	}
+
+	url := fmt.Sprintf("%s?%s", baseURL, params.Encode())
+	fmt.Println("URL de la solicitud:", url)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("error al realizar la solicitud a ChartLyrics: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error al leer la respuesta de ChartLyrics: %v", err)
+	}
+
+	if len(body) == 0 {
+		fmt.Println("Respuesta vacía recibida de ChartLyrics.")
+		return nil, fmt.Errorf("respuesta vacía de ChartLyrics")
+	}
+
+	fmt.Println("Respuesta de ChartLyrics:", string(body))
+
+	var result struct {
+		Songs []struct {
+			Title  string `xml:"Song"`
+			Artist string `xml:"Artist"`
+			URL    string `xml:"SongUrl"`
+		} `xml:"SearchLyricResult"`
+	}
+	if err := xml.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("error al parsear la respuesta de ChartLyrics: %v", err)
+	}
+
+	var songs []map[string]string
+	for _, r := range result.Songs {
+		songs = append(songs, map[string]string{
+			"name":   r.Title,
+			"artist": r.Artist,
+			"url":    r.URL,
+			"origin": "chartlyrics",
 		})
 	}
 
